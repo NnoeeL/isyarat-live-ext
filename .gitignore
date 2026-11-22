@@ -1,5 +1,7 @@
 node_modules/
 scripts/data/kaggle/
+__pycache__/
+*.pyc
 *.log
 .DS_Store
 Thumbs.db

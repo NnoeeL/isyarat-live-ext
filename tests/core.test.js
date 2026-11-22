@@ -7,7 +7,10 @@ import {
   stemIndonesian,
   translateTextToSignSequence,
 } from '../src/content/textToSign.js';
-import { composeSmartSentence } from '../src/content/sentenceAI.js';
+import {
+  composeSmartSentence,
+  getWordSuggestions,
+} from '../src/content/sentenceAI.js';
 
 function makeDummyHand(offsetX = 0, offsetY = 0, scale = 1) {
   return Array.from({ length: 21 }, (_, i) => ({
@@ -136,4 +139,6 @@ test('textToSign stems Indonesian words and falls back to A-Z SVG fingerspelling
     composeSmartSentence(['H', 'A', 'A', 'A', 'L', 'O', 'A', 'P', 'A', 'K', 'A', 'B', 'A', 'R'], true),
     'HALO APA KABAR'
   );
+  assert.ok(getWordSuggestions('ter').includes('TERIMA'));
+  assert.ok(getWordSuggestions('bel').includes('BELAJAR'));
 });

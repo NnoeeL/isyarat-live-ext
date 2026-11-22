@@ -121,6 +121,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const handedness = (result.handednesses || []).map(
           (h) => h?.[0]?.categoryName || 'Unknown'
         );
+        // Compact 2D landmarks for crisp skeleton preview overlay on the active thumbnail
+        const previewPoints = result.landmarks[0].map((pt) => [
+          Number(pt.x.toFixed(3)),
+          Number(pt.y.toFixed(3)),
+        ]);
 
         sendResponse({
           ok: true,
@@ -128,6 +133,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           geometricSign,
           geometricLetter,
           handedness,
+          previewPoints,
         });
       } catch (err) {
         sendResponse({

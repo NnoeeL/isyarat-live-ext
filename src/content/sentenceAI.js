@@ -220,3 +220,27 @@ export function composeSmartSentence(tokens, finalizeLastLetters = false) {
 
   return words.join(' ').replace(/\s+/g, ' ').trim();
 }
+
+/**
+ * Return up to `limit` Indonesian word autocomplete suggestions for a partial
+ * fingerspelled prefix (e.g. "ter" -> ["TERIMA", "TEMAN"]).
+ *
+ * @param {string} prefix
+ * @param {number} [limit=4]
+ * @returns {string[]}
+ */
+export function getWordSuggestions(prefix, limit = 4) {
+  const clean = String(prefix || '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+  if (clean.length < 1) return [];
+
+  const matches = [];
+  for (const w of CORE_INDONESIAN_WORDS) {
+    if (w.startsWith(clean) && w !== clean) {
+      matches.push(w.toUpperCase());
+      if (matches.length >= limit) break;
+    }
+  }
+  return matches;
+}

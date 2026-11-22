@@ -1,5 +1,6 @@
 import { translateTextToSignSequence } from './textToSign.js';
-import { composeSmartSentence } from './sentenceAI.js';
+import { composeSmartSentence, getWordSuggestions } from './sentenceAI.js';
+import { HAND_CONNECTIONS } from './detector.js';
 
 /**
  * Floating Overlay UI rendered inside an isolated Shadow DOM
@@ -389,6 +390,29 @@ export class OverlayUI {
           border-radius: 999px;
           transition: width 0.14s ease;
         }
+        .suggest-bar {
+          display: none;
+          gap: 5px;
+          flex-wrap: wrap;
+          margin-bottom: 8px;
+        }
+        .suggest-bar.visible {
+          display: flex;
+        }
+        .suggest-chip {
+          background: #e8f1ee;
+          border: 1px solid rgba(77, 124, 111, 0.28);
+          color: #2f5d50;
+          border-radius: 999px;
+          padding: 3px 10px;
+          font-size: 11px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.14s;
+        }
+        .suggest-chip:hover {
+          background: #d6e7e1;
+        }
         .transcript-box {
           background: #ffffff;
           border: 1px solid rgba(28, 25, 23, 0.09);
@@ -636,16 +660,19 @@ export class OverlayUI {
               </div>
             </div>
 
+            <div class="suggest-bar" id="suggest-bar" title="Klik saran kata untuk melengkapi ejaan"></div>
+
             <div class="transcript-box" id="transcript-box">
               <span style="color:#a8a29e">Hasil terjemahan kalimat akan muncul di sini...</span>
             </div>
 
             <div class="hint" style="margin:0 0 8px;font-size:10.5px;">
-              Mendukung <b>Huruf A–Z</b> (mis. <b>A</b> kepal jempol di samping, <b>B</b> 4 jari rapat, <b>L</b>, <b>O</b>, <b>U</b>, <b>V</b>, <b>W</b>, <b>Y</b>) & <b>Kata</b> (<b>SAYA</b> tangan di dada · <b>SUKA</b> 🤟 · <b>KAMU</b> ☝️ · <b>HALO</b> ✋ · <b>BAGUS</b> 👍 · <b>TERIMA KASIH</b> 🤚)
+              Mendukung <b>Huruf A–Z</b> (mis. <b>A</b> kepal jempol di samping, <b>B</b> 4 jari rapat, <b>C</b>, <b>L</b>, <b>O</b>, <b>U</b>, <b>V</b>, <b>W</b>, <b>Y</b>) & <b>Kata</b> (<b>SAYA</b> tangan di dada · <b>SUKA</b> 🤟 · <b>KAMU</b> ☝️ · <b>HALO</b> ✋ · <b>BAGUS</b> 👍 · <b>TERIMA KASIH</b> 🤚)
             </div>
 
             <div class="btn-row">
               <button class="btn primary" id="btn-cc" title="Tampilkan subtitle di bawah video">CC: ON</button>
+              <button class="btn" id="btn-backspace" title="Hapus 1 huruf/kata terakhir">⌫</button>
               <button class="btn" id="btn-space">Spasi</button>
               <button class="btn" id="btn-speak">Baca</button>
               <button class="btn" id="btn-copy">Salin</button>
@@ -753,6 +780,9 @@ export class OverlayUI {
       btn.textContent = this.subtitleEnabled ? 'CC: ON' : 'CC: OFF';
       btn.classList.toggle('primary', this.subtitleEnabled);
       this._renderSubtitle();
+    });
+    this._q('#btn-backspace').addEventListener('click', () => {
+      this.backspaceTranscript();
     });
     this._q('#btn-space').addEventListener('click', () => {
       this.appendTranscript(' ');
@@ -933,7 +963,7 @@ export class OverlayUI {
     // Handled by drawAllVideoPreviews
   }
 
-  drawAllVideoPreviews(videoEntries, activeIdx) {
+  drawAllVideoPreviews(videoEntries, activeIdx, previewPoints = null) {
     const strip = this._q('#source-strip');
     if (!strip) return;
 
@@ -964,6 +994,27 @@ export class OverlayUI {
         try {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+
+          // Gambar kerangka 21-titik tangan tipis pada thumbnail video aktif
+          if (idx === activeIdx && Array.isArray(previewPoints) && previewPoints.length === 21) {
+            ctx.strokeStyle = 'rgba(77, 196, 155, 0.9)';
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            for (const [a, b] of HAND_CONNECTIONS) {
+              const p1 = previewPoints[a];
+              const p2 = previewPoints[b];
+              ctx.moveTo(p1[0] * canvas.width, p1[1] * canvas.height);
+              ctx.lineTo(p2[0] * canvas.width, p2[1] * canvas.height);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            for (const pt of previewPoints) {
+              ctx.beginPath();
+              ctx.arc(pt[0] * canvas.width, pt[1] * canvas.height, 1.3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
         } catch {
           // Ignore draw error
         }
@@ -1039,11 +1090,71 @@ export class OverlayUI {
     return composeSmartSentence(this.transcriptTokens, lastIsSpace);
   }
 
+  backspaceTranscript() {
+    if (this.transcriptTokens.length === 0) return;
+    // Buang spasi trailing dulu jika ada, lalu buang 1 token terakhir
+    if (this.transcriptTokens[this.transcriptTokens.length - 1] === ' ') {
+      this.transcriptTokens.pop();
+    }
+    if (this.transcriptTokens.length > 0) {
+      this.transcriptTokens.pop();
+    }
+    this._renderTranscript();
+  }
+
+  _getCurrentLetterPrefix() {
+    let prefix = '';
+    for (let i = this.transcriptTokens.length - 1; i >= 0; i--) {
+      const tok = this.transcriptTokens[i];
+      if (tok === ' ' || tok.length !== 1) break;
+      prefix = tok + prefix;
+    }
+    return prefix;
+  }
+
+  _applyWordSuggestion(word) {
+    // Hapus huruf-huruf prefix terakhir, ganti dengan kata lengkap + spasi
+    while (
+      this.transcriptTokens.length > 0 &&
+      this.transcriptTokens[this.transcriptTokens.length - 1] !== ' ' &&
+      this.transcriptTokens[this.transcriptTokens.length - 1].length === 1
+    ) {
+      this.transcriptTokens.pop();
+    }
+    this.transcriptTokens.push(word, ' ');
+    this._renderTranscript();
+  }
+
+  _renderSuggestions() {
+    const bar = this._q('#suggest-bar');
+    if (!bar) return;
+    const prefix = this._getCurrentLetterPrefix();
+    const suggestions = getWordSuggestions(prefix, 4);
+
+    if (suggestions.length === 0) {
+      bar.classList.remove('visible');
+      bar.innerHTML = '';
+      return;
+    }
+
+    bar.innerHTML = '';
+    for (const word of suggestions) {
+      const chip = document.createElement('button');
+      chip.className = 'suggest-chip';
+      chip.type = 'button';
+      chip.textContent = word;
+      chip.addEventListener('click', () => this._applyWordSuggestion(word));
+      bar.appendChild(chip);
+    }
+    bar.classList.add('visible');
+  }
+
   _renderTranscript() {
     const box = this._q('#transcript-box');
     const text = this.getTranscriptText();
     box.textContent = text || 'Hasil terjemahan kalimat akan muncul di sini...';
     box.scrollTop = box.scrollHeight;
+    this._renderSuggestions();
     this._renderSubtitle();
   }
 

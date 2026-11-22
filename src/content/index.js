@@ -390,7 +390,11 @@ class IsyaratLiveController {
       `Aktif • ${roleText} (${this.videoEntries.length} sumber)`,
       'live'
     );
-    this.ui.drawAllVideoPreviews(this.videoEntries, activeIdx);
+    this.ui.drawAllVideoPreviews(
+      this.videoEntries,
+      activeIdx,
+      this.lastPreviewPoints
+    );
 
     let dataUrl;
     try {
@@ -429,6 +433,7 @@ class IsyaratLiveController {
     this.inFlight = false;
 
     if (!detection?.ok || !detection.vectors || detection.vectors.length === 0) {
+      this.lastPreviewPoints = null;
       this.noHandFrames++;
       // Jika tangan turun/keluar kamera selama ~1.5 detik (24 frame), otomatis finalkan kata yang sedang dieja
       if (this.noHandFrames === 24) {
@@ -440,6 +445,7 @@ class IsyaratLiveController {
     }
 
     this.noHandFrames = 0;
+    this.lastPreviewPoints = detection.previewPoints || null;
     const vector = detection.vectors[0];
 
     // Quick-Train recording mode
