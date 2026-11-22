@@ -1,5 +1,4 @@
 node_modules/
-dist/
 scripts/data/kaggle/
 *.log
 .DS_Store

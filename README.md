@@ -31,38 +31,48 @@ Ekstensi Google Chrome (**Manifest V3**) untuk menerjemahkan bahasa isyarat Indo
 
 ---
 
-## Panduan Instalasi & Build
+## Cara Cepat Pasang di Chrome (Tanpa Build!)
 
-### Prasyarat
-- **Node.js** v18+
-- **Google Chrome** (versi terbaru yang mendukung Manifest V3 Offscreen API)
+Folder **`dist/`** sudah dibundel siap pakai di dalam repo ini — kamu **tidak perlu install Node.js atau menjalankan `npm run build`** untuk langsung menggunakannya:
 
-### Langkah Build
-```bash
-git clone https://github.com/NnoeeL/isyarat-live-ext.git
-cd isyarat-live-ext
-npm install
-npm run setup:assets
-npm run build
-```
-
-> **Windows PowerShell:** Jika `npm` terblokir ExecutionPolicy, gunakan `npm.cmd` (mis. `npm.cmd install`, `npm.cmd run build`).
-
----
-
-## Cara Memasang & Menggunakan di Google Chrome
-
-1. Buka `chrome://extensions/` di Google Chrome.
-2. Aktifkan **Developer mode** di pojok kanan atas.
-3. Klik **Load unpacked** lalu pilih folder `isyarat-live-ext/dist`.
-4. Buka salah satu platform berikut:
+1. **Clone repo** (atau klik tombol hijau **Code → Download ZIP** lalu ekstrak):
+   ```bash
+   git clone https://github.com/NnoeeL/isyarat-live-ext.git
+   ```
+2. Buka **`chrome://extensions/`** di Google Chrome.
+3. Aktifkan **Developer mode** (pojok kanan atas).
+4. Klik **Load unpacked** lalu pilih folder:
+   ```text
+   isyarat-live-ext/dist
+   ```
+5. Buka salah satu platform video call berikut:
    - **WhatsApp Web** (`https://web.whatsapp.com`)
    - **Google Meet** (`https://meet.google.com`)
    - **Umingle** (`https://umingle.com`)
-5. Panel **Isyarat-Live** akan muncul di pojok kanan bawah:
-   - **Menerjemahkan gerakan tangan lawan bicara (`Sign → Teks`):** Mulai video call → pastikan thumbnail video lawan bicara terpilih (atau klik thumbnail-nya) → tahan pose ~0,6 detik hingga muncul `Terkunci ✓` → subtitle otomatis tampil di bawah video.
+6. Panel **Isyarat-Live** otomatis muncul di pojok kanan bawah:
+   - **Menerjemahkan gerakan tangan lawan bicara (`Sign → Teks`):** Mulai video call → pastikan thumbnail video lawan bicara terpilih (atau klik thumbnail-nya) → tahan pose ~0,45 detik hingga muncul `Terkunci ✓` → subtitle otomatis tampil di bawah video.
    - **Menerjemahkan suara/teks ke isyarat (`Teks → Sign`):** Buka tab **Teks → Sign** → langsung bicara dalam Bahasa Indonesia (atau ketik teks / klik chip kalimat) → video peraga BISINDO / ejaan A–Z otomatis diputar.
    - **Menambah kata baru (`Latih Kata`):** Pilih chip kata atau ketik label → klik **Rekam (15x)** sambil tahan pose tangan di depan kamera.
+
+---
+
+## Build Ulang dari Source (Khusus Developer)
+
+Jika kamu mengubah kode di folder `src/` dan ingin melakukan build ulang ke `dist/`:
+
+### Prasyarat
+- **Node.js** v18+
+
+### Langkah Build
+```bash
+cd isyarat-live-ext
+npm install
+npm run build
+```
+
+> **Catatan Windows:**
+> - Jika `npm` terblokir PowerShell ExecutionPolicy, gunakan `npm.cmd` (mis. `npm.cmd install`, `npm.cmd run build`).
+> - Jika Windows *Smart App Control* memblokir native binary Rollup saat build, cukup gunakan folder `dist/` yang sudah tersedia di repo ini tanpa perlu build ulang.
 
 ---
 
