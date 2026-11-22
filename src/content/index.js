@@ -129,13 +129,14 @@ class IsyaratLiveController {
       maxDistance: 1.45,
       minConfidence: 0.68,
     });
-    // Tahan pose stabil ~0.45 detik (5 dari 7 frame) + filter gerakan wajar untuk WebRTC
+    // Tahan pose stabil ~0.55 detik (6 dari 8 frame) + jeda global 1.1 detik antar huruf/kata
     this.stability = new StabilityBuffer({
-      windowSize: 7,
-      minConsensus: 5,
-      cooldownMs: 1200,
+      windowSize: 8,
+      minConsensus: 6,
+      cooldownMs: 1600,
+      globalCooldownMs: 1100,
       preventConsecutiveDuplicate: true,
-      maxMotionDelta: 0.24,
+      maxMotionDelta: 0.22,
     });
     this.noHandFrames = 0;
 
@@ -535,7 +536,8 @@ class IsyaratLiveController {
       finalLabel,
       finalConfidence,
       latencyMs,
-      stabilityResult.holdProgress ?? 0
+      stabilityResult.holdProgress ?? 0,
+      Boolean(stabilityResult.inCooldown)
     );
 
     if (stabilityResult.committed && stabilityResult.stableLabel) {

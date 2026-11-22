@@ -1022,13 +1022,23 @@ export class OverlayUI {
     });
   }
 
-  updateLivePrediction(label, confidence = 0, latencyMs = 0, holdProgress = 0) {
+  updateLivePrediction(
+    label,
+    confidence = 0,
+    latencyMs = 0,
+    holdProgress = 0,
+    inCooldown = false
+  ) {
     this._q('#live-sign').textContent = label || '—';
     const holdPct = Math.round(Math.max(0, Math.min(1, holdProgress)) * 100);
     const confPct = Math.round(Math.max(0, Math.min(1, confidence)) * 100);
-    // Bar menampilkan progres menahan pose agar pengguna tahu kapan huruf/kata terkunci
-    this._q('#conf-fill').style.width = `${label ? Math.max(15, holdPct) : 0}%`;
-    if (label) {
+    this._q('#conf-fill').style.width = `${
+      inCooldown ? 100 : label ? Math.max(12, holdPct) : 0
+    }%`;
+
+    if (inCooldown) {
+      this._q('#live-meta').textContent = 'Jeda sebentar — silakan ganti pose berikutnya';
+    } else if (label) {
       this._q('#live-meta').textContent =
         holdPct < 100
           ? `Tahan pose "${label}" (${holdPct}%) • Keyakinan ${confPct}%`
@@ -1036,7 +1046,7 @@ export class OverlayUI {
     } else {
       this._q('#live-meta').textContent = 'Menunggu gerakan tangan yang stabil';
     }
-    this._renderSubtitle(holdPct >= 75 ? label : null);
+    this._renderSubtitle(!inCooldown && holdPct >= 75 ? label : null);
   }
 
   updateVideoOptions(videoEntries, selectedKey) {

@@ -228,6 +228,7 @@ export class StabilityBuffer {
     this.windowSize = options.windowSize ?? 7;
     this.minConsensus = options.minConsensus ?? 5;
     this.cooldownMs = options.cooldownMs ?? 1200;
+    this.globalCooldownMs = options.globalCooldownMs ?? 0;
     this.preventConsecutiveDuplicate =
       options.preventConsecutiveDuplicate ?? false;
     this.maxMotionDelta = options.maxMotionDelta ?? 0.22;
@@ -267,6 +268,22 @@ export class StabilityBuffer {
   push(label, nowMs = Date.now(), vector = null) {
     const motion = vector ? this._computeMotion(vector) : 0;
 
+    // Jeda global setelah huruf/kata terkunci agar tangan sempat pindah pose tanpa spam
+    if (
+      this.globalCooldownMs > 0 &&
+      this.lastCommittedAt > 0 &&
+      nowMs - this.lastCommittedAt < this.globalCooldownMs
+    ) {
+      this.buffer = [];
+      return {
+        stableLabel: this.lastCommittedLabel,
+        committed: false,
+        holdProgress: 0,
+        candidateLabel: label,
+        inCooldown: true,
+      };
+    }
+
     // If hand is moving rapidly between poses, do not accumulate transition predictions
     if (vector && motion > this.maxMotionDelta) {
       return {
@@ -274,6 +291,7 @@ export class StabilityBuffer {
         committed: false,
         holdProgress: 0,
         candidateLabel: label,
+        inCooldown: false,
       };
     }
 
