@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Isyarat-Live</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 304px;
+        background: #fcfbf9;
+        color: #1c1917;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+        padding: 16px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .title {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: #1c1917;
+      }
+      .subtitle-tag {
+        font-size: 11px;
+        font-weight: 500;
+        color: #78716c;
+      }
+      .card {
+        background: #f5f3ef;
+        border: 1px solid rgba(28, 25, 23, 0.06);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1c1917;
+      }
+      .sub {
+        font-size: 11.5px;
+        color: #78716c;
+        margin-top: 3px;
+      }
+      .switch {
+        position: relative;
+        width: 42px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        inset: 0;
+        background: #d6d3cd;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .slider::before {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        top: 3px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(28, 25, 23, 0.2);
+        transition: transform 0.2s;
+      }
+      .switch input:checked + .slider {
+        background: #4d7c6f;
+      }
+      .switch input:checked + .slider::before {
+        transform: translateX(18px);
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .stat-box {
+        background: #ffffff;
+        border: 1px solid rgba(28, 25, 23, 0.06);
+        border-radius: 10px;
+        padding: 9px;
+        text-align: center;
+      }
+      .stat-val {
+        font-size: 17px;
+        font-weight: 700;
+        color: #2f5d50;
+      }
+      .stat-lbl {
+        font-size: 10.5px;
+        color: #78716c;
+        margin-top: 2px;
+      }
+      .btn {
+        width: 100%;
+        background: #4d7c6f;
+        color: #ffffff;
+        border: none;
+        border-radius: 11px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn:hover {
+        background: #3f685d;
+      }
+      .btn:disabled {
+        background: #e7e5e4;
+        color: #a8a29e;
+        cursor: not-allowed;
+      }
+      .platforms {
+        font-size: 11px;
+        color: #a8a29e;
+        text-align: center;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="title">Isyarat-Live</div>
+      <span class="subtitle-tag">SIBI · BISINDO</span>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <div class="label">Penerjemah Aktif</div>
+          <div class="sub" id="platform-status">Memeriksa tab aktif...</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggle-enabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Dataset Lokal</div>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-labels">0</div>
+          <div class="stat-lbl">Kata / Label</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-samples">0</div>
+          <div class="stat-lbl">Total Sampel</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="btn-quick-train">Buka Mode Latih Kata</button>
+    <div class="platforms">
+      Umingle · WhatsApp Web · Google Meet
+    </div>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

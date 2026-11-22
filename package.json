@@ -1,0 +1,20 @@
+{
+  "name": "isyarat-live-ext",
+  "version": "1.0.0",
+  "description": "Ekstensi Chrome Manifest V3 untuk menerjemahkan bahasa isyarat Indonesia (SIBI/BISINDO) secara real-time 100% lokal di browser.",
+  "type": "module",
+  "scripts": {
+    "setup:assets": "node scripts/setup-assets.mjs",
+    "convert:csv": "node scripts/convert-sibi-csv.mjs",
+    "extract:mp4": "python scripts/extract-mp4-dataset.py",
+    "build": "node scripts/build.mjs",
+    "dev": "vite build --watch",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.21"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}
