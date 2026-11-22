@@ -294,17 +294,55 @@ export function classifyGeometricLetter(landmarks) {
   const vx = middleMCP.x - wrist.x;
   const vy = middleMCP.y - wrist.y;
   const isHorizontal = Math.abs(vx) > Math.abs(vy) * 1.1;
+  const isPointingDown = vy > Math.abs(vx) * 0.65;
 
-  // Huruf A vs S vs E vs O vs C (ketika 4 jari mengepal / melengkung)
+  // Huruf P & Q (mengarah ke bawah)
+  if (isPointingDown || indexTip.y > indexMCP.y + palmSize * 0.35) {
+    if (indexExt && middleExt && !ringExt && !pinkyExt) {
+      return { label: 'P', confidence: 0.92 };
+    }
+    if (indexExt && !middleExt && !ringExt && !pinkyExt) {
+      return { label: 'Q', confidence: 0.92 };
+    }
+  }
+
+  // Huruf C, O, X, A, S, T, N, M, E (ketika 4 jari tidak tegak lurus)
   if (extCount === 0) {
-    // O: ujung jempol bertemu ujung telunjuk & tengah membentuk lingkaran
+    const thumbIndexDist = dist2D(thumbTip, indexTip);
+    const thumbMiddleDist = dist2D(thumbTip, middleTip);
+    const indexTipToWrist = dist2D(indexTip, wrist);
+    const middleTipToWrist = dist2D(middleTip, wrist);
+
+    // O: ujung jempol bertemu ujung telunjuk & tengah membentuk lingkaran tertutup
     if (
-      dist2D(thumbTip, indexTip) < palmSize * 0.38 &&
-      dist2D(thumbTip, middleTip) < palmSize * 0.45
+      thumbIndexDist < palmSize * 0.36 &&
+      thumbMiddleDist < palmSize * 0.44
     ) {
       return { label: 'O', confidence: 0.94 };
     }
-    // A: kepalan tangan dengan jempol menempel tegak di samping telunjuk (seperti pose Alwan!)
+
+    // C: jempol & keempat jari melengkung terbuka membentuk busur huruf C (ada celah terbuka jelas)
+    if (
+      thumbIndexDist >= palmSize * 0.42 &&
+      thumbIndexDist <= palmSize * 1.25 &&
+      indexTipToWrist > palmSize * 1.05 &&
+      middleTipToWrist > palmSize * 1.05 &&
+      dist2D(indexTip, indexMCP) > palmSize * 0.55
+    ) {
+      return { label: 'C', confidence: 0.94 };
+    }
+
+    // X: telunjuk setengah menekuk seperti kait, 3 jari lain mengepal rapat
+    if (
+      indexTipToWrist > palmSize * 1.15 &&
+      middleTipToWrist < palmSize * 0.98 &&
+      dist2D(ringTip, wrist) < palmSize * 0.98 &&
+      dist2D(pinkyTip, wrist) < palmSize * 0.98
+    ) {
+      return { label: 'X', confidence: 0.92 };
+    }
+
+    // A: kepalan tangan dengan jempol menempel tegak di samping telunjuk
     if (
       thumbTip.y < indexPIP.y + palmSize * 0.15 &&
       dist2D(thumbTip, indexPIP) < palmSize * 0.62 &&
@@ -312,12 +350,40 @@ export function classifyGeometricLetter(landmarks) {
     ) {
       return { label: 'A', confidence: 0.95 };
     }
-    // S: kepalan tangan dengan jempol melintang di depan jari tengah/manis
-    if (dist2D(thumbTip, middlePIP) < palmSize * 0.48) {
-      return { label: 'S', confidence: 0.92 };
+
+    // T: jempol diselipkan di antara telunjuk & jari tengah
+    if (
+      dist2D(thumbTip, indexPIP) < palmSize * 0.42 &&
+      dist2D(thumbTip, middlePIP) < palmSize * 0.45 &&
+      thumbTip.y < middleMCP.y
+    ) {
+      return { label: 'T', confidence: 0.89 };
     }
+
+    // N: jempol diselipkan di antara jari tengah & manis
+    if (
+      dist2D(thumbTip, middlePIP) < palmSize * 0.4 &&
+      dist2D(thumbTip, ringPIP) < palmSize * 0.45 &&
+      thumbTip.y > indexPIP.y
+    ) {
+      return { label: 'N', confidence: 0.88 };
+    }
+
+    // M: jempol diselipkan di antara jari manis & kelingking
+    if (
+      dist2D(thumbTip, ringPIP) < palmSize * 0.42 &&
+      dist2D(thumbTip, pinkyPIP) < palmSize * 0.48
+    ) {
+      return { label: 'M', confidence: 0.88 };
+    }
+
+    // S: kepalan tangan dengan jempol melintang di depan jari tengah
+    if (dist2D(thumbTip, middlePIP) < palmSize * 0.52) {
+      return { label: 'S', confidence: 0.91 };
+    }
+
     // E: jempol ditekuk di bawah ujung keempat jari
-    if (thumbTip.y > indexTip.y && dist2D(thumbTip, pinkyMCP) < palmSize * 0.75) {
+    if (thumbTip.y > indexTip.y && dist2D(thumbTip, pinkyMCP) < palmSize * 0.78) {
       return { label: 'E', confidence: 0.9 };
     }
   }

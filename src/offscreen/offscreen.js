@@ -31,6 +31,7 @@ console.error = (...args) => {
 let landmarker = null;
 let initPromise = null;
 let initError = null;
+let lastVideoTimestamp = 0;
 
 async function ensureLandmarker() {
   if (landmarker) return landmarker;
@@ -43,10 +44,10 @@ async function ensureLandmarker() {
       const vision = await FilesetResolver.forVisionTasks(wasmPath);
 
       try {
-        // Prefer GPU (WebGL) for ~3x faster real-time inference (<12ms)
+        // VIDEO mode enables temporal landmark smoothing + faster tracking
         landmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath, delegate: 'GPU' },
-          runningMode: 'IMAGE',
+          runningMode: 'VIDEO',
           numHands: 1,
           minHandDetectionConfidence: 0.55,
           minHandPresenceConfidence: 0.55,
@@ -55,7 +56,7 @@ async function ensureLandmarker() {
       } catch {
         landmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath, delegate: 'CPU' },
-          runningMode: 'IMAGE',
+          runningMode: 'VIDEO',
           numHands: 1,
           minHandDetectionConfidence: 0.55,
           minHandPresenceConfidence: 0.55,
@@ -98,7 +99,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       try {
         const detector = await ensureLandmarker();
         const bitmap = await decodeDataUrlToBitmap(message.dataUrl);
-        const result = detector.detect(bitmap);
+        const now = Math.floor(performance.now());
+        const ts = now <= lastVideoTimestamp ? lastVideoTimestamp + 1 : now;
+        lastVideoTimestamp = ts;
+        const result = detector.detectForVideo(bitmap, ts);
         bitmap.close();
 
         if (!result?.landmarks?.length) {

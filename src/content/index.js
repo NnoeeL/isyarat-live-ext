@@ -126,16 +126,16 @@ class IsyaratLiveController {
 
     this.classifier = new KNNClassifier({
       k: 5,
-      maxDistance: 0.46,
-      minConfidence: 0.85,
+      maxDistance: 1.45,
+      minConfidence: 0.68,
     });
-    // Tahan pose dengan stabil (~9 frame / ~0.65 detik + filter gerakan) sebelum kata/huruf disimpulkan
+    // Tahan pose stabil ~0.45 detik (5 dari 7 frame) + filter gerakan wajar untuk WebRTC
     this.stability = new StabilityBuffer({
-      windowSize: 10,
-      minConsensus: 8,
-      cooldownMs: 1500,
+      windowSize: 7,
+      minConsensus: 5,
+      cooldownMs: 1200,
       preventConsecutiveDuplicate: true,
-      maxMotionDelta: 0.14,
+      maxMotionDelta: 0.24,
     });
     this.noHandFrames = 0;
 
@@ -394,15 +394,23 @@ class IsyaratLiveController {
 
     let dataUrl;
     try {
-      this.captureCtx.drawImage(
-        entry.video,
-        0,
-        0,
-        CAPTURE_WIDTH,
-        CAPTURE_HEIGHT
-      );
+      // Jaga aspect ratio asli video/canvas agar tangan tidak gepeng di layar portrait HP / 16:9
+      const srcW = entry.video.videoWidth || entry.video.width || CAPTURE_WIDTH;
+      const srcH = entry.video.videoHeight || entry.video.height || CAPTURE_HEIGHT;
+      const maxDim = 256;
+      const scale = Math.min(maxDim / srcW, maxDim / srcH, 1);
+      const targetW = Math.max(64, Math.round(srcW * scale));
+      const targetH = Math.max(64, Math.round(srcH * scale));
+      if (
+        this.captureCanvas.width !== targetW ||
+        this.captureCanvas.height !== targetH
+      ) {
+        this.captureCanvas.width = targetW;
+        this.captureCanvas.height = targetH;
+      }
+      this.captureCtx.drawImage(entry.video, 0, 0, targetW, targetH);
       this.ui.drawVideoPreview(entry.video);
-      dataUrl = this.captureCanvas.toDataURL('image/jpeg', 0.72);
+      dataUrl = this.captureCanvas.toDataURL('image/jpeg', 0.7);
     } catch {
       return;
     }
@@ -468,11 +476,8 @@ class IsyaratLiveController {
     const latencyMs = knnPred.latencyMs || 0.2;
 
     if (mode === 'letters') {
-      // Mode Huruf A-Z
-      if (knnPred.label && knnPred.distance <= 0.35 && knnPred.confidence >= 0.86) {
-        finalLabel = knnPred.label;
-        finalConfidence = knnPred.confidence;
-      } else if (geoLetter?.label) {
+      // Mode Huruf A-Z: utamakan geometri 24 huruf statis + KNN yang sudah dikalibrasi
+      if (geoLetter?.label) {
         finalLabel = geoLetter.label;
         finalConfidence = geoLetter.confidence;
       } else if (knnPred.label) {
@@ -481,7 +486,7 @@ class IsyaratLiveController {
       }
     } else if (mode === 'words') {
       // Mode Kata Saja
-      if (knnPred.label && knnPred.distance <= 0.36 && knnPred.confidence >= 0.88) {
+      if (knnPred.label && knnPred.distance <= 0.65 && knnPred.confidence >= 0.82) {
         finalLabel = knnPred.label;
         finalConfidence = knnPred.confidence;
       } else if (geoWord?.label) {
@@ -492,15 +497,11 @@ class IsyaratLiveController {
         finalConfidence = knnPred.confidence;
       }
     } else {
-      // Mode Kata + Huruf A-Z (Default):
-      // Huruf khas seperti A, B, E, L, O, R, S, U, W, I dan kata inti seperti SAYA, SUKA, BAGUS, HALO aktif bersamaan
+      // Mode Kata + Huruf A-Z (Default)
       const NON_CONFLICT_LETTERS = new Set([
-        'A', 'B', 'C', 'E', 'L', 'O', 'R', 'S', 'U',
+        'A', 'B', 'C', 'E', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'X',
       ]);
-      if (knnPred.label && knnPred.distance <= 0.34 && knnPred.confidence >= 0.88) {
-        finalLabel = knnPred.label;
-        finalConfidence = knnPred.confidence;
-      } else if (
+      if (
         geoLetter?.label &&
         NON_CONFLICT_LETTERS.has(geoLetter.label)
       ) {
